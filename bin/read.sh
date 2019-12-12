@@ -21,7 +21,6 @@ TXT2SVO='./bin/txt2svo.py'
 TXT2ADR='./bin/txt2adr.sh'
 TXT2NGRAMS='./bin/txt2ngrams.py'
 TXT2URLS='./bin/txt2urls.sh'
-
 SCHEMA='./etc/schema.sql'
 INITIALIZEDATABASE='./bin/db-initialize.sh'
 
