@@ -6,6 +6,8 @@
 # December 11, 2019 - first cut; "Happy Birthday, Lincoln!"
 
 
+CACHE='cache'
+
 # sanity check
 if [[ -z $1 || -z $2 ]]; then
 
@@ -20,4 +22,5 @@ DIRECTORY=$2
 
 # do the work and done
 cp "$FILE" "$DIRECTORY"
+cp "$FILE" "$DIRECTORY/../$CACHE"
 exit
