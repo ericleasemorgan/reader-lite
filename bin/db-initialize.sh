@@ -7,20 +7,20 @@
 
 
 SCHEMA='./etc/schema.sql'
+DATABASE='reader.db'
 
 # sanity check
-if [[ -z $1 || -z $2 ]]; then
+if [[ -z $1 ]]; then
 
-	echo "Usage: $0 <directory> <identifier>" >&2
+	echo "Usage: $0 <directory>" >&2
 	exit
 
 fi
 
 # get input
 DIRECTORY=$1
-IDENTIFIER=$2
 
 # initialize, do the work, and done
-rm -rf "$DIRECTORY/$IDENTIFIER.db"
-cat $SCHEMA | sqlite3 "$DIRECTORY/$IDENTIFIER.db"
+rm -rf "$DIRECTORY/$DATABASE"
+cat $SCHEMA | sqlite3 "$DIRECTORY/$DATABASE"
 exit

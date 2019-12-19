@@ -14,7 +14,7 @@ import textacy.preprocessing
 
 # sanity check
 if len( sys.argv ) != 3 :
-	sys.stderr.write( 'Usage: ' + sys.argv[ 0 ] + "<number> <file>\n" )
+	sys.stderr.write( 'Usage: ' + sys.argv[ 0 ] + " <number> <file>\n" )
 	quit()
 
 # get input
@@ -31,14 +31,17 @@ text = textacy.preprocessing.normalize.normalize_whitespace( text )
 maximum = len( text ) + 1
 model   = spacy.load( 'en', max_length=maximum )
 
-# model the data
+# model the data; this needs to be improved
 doc = model( text )
+
+# output header
+print( '\t'.join( [ 'ngram', 'ngram', 'ngram' ] ) )
 
 # do the work
 for ngrams in textacy.extract.ngrams( doc, size ) :
 	
 	# output
-	ngrams = ngrams.text.split( ' ' )
+	ngrams = ngrams.text.lower().split( ' ' )
 	print( '\t'.join( ngrams ) )
 
 # done
