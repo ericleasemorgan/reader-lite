@@ -104,8 +104,8 @@ printf "Step #14 of 16: Waiting for extractions to finish\n" >&2
 wait
 
 # initialize database
-printf "Step #15 of 16: Initializing database\n" >&2
-$INITIALIZEDATABASE "$DIRECTORY" "$IDENTIFIER"
+#printf "Step #15 of 16: Initializing database\n" >&2
+#$INITIALIZEDATABASE "$DIRECTORY" "$IDENTIFIER"
 
 # write narrative report(s)
 printf "Step #15 of 16: Generating narrative reports\n" >&2
