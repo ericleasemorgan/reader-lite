@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+	<head><title>Reader Sentences Lite</title></head>
+	<body>
+	
+		<div style="width:96%; display:table;">
+			<div style="display:table-row">
+
+				<!-- menu -->
+				<div style="width:20%; display:table-cell; text-align:center">
+					<p>
+					<a href="/">Home</a><br />
+					<br />
+					<a href="/search/">Search</a><br />
+					<a href="/cite/">Cite</a><br />
+					<a href="/format/">Format</a><br />
+					<a href="/persona/">Set persona</a><br />
+					<a href="/summarize/">Summarize</a><br />
+					<a href="/elaborate/">Elaborate</a><br />
+					<br />
+					<a href="/nextSteps/">Next Steps</a>
+					</p>
+				</div>
+
+				<!-- content -->
+				<div style="display:table-cell;">
+					{% block content %}{% endblock %}
+					<hr />
+					<p style='text-align:right'>Eric Lease Morgan &lt;<a href="mailto:eric_morgan@infomotions.com">eric_morgan@infomotions.com</a>&gt;</p>
+				</div>
+
+			</div>
+		</div>		
+	</body>
+</html>

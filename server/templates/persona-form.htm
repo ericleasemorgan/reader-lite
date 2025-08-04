@@ -1,0 +1,15 @@
+{% extends 'base.htm' %}
+
+{% block content %}
+	  <h1>Set Persona</h1>
+	  
+	  <form method='GET' action='/persona/'>
+		<select name='persona'>
+		{% for persona in personas %}
+ 			<option value='{{ persona }}'>{{ persona }}</option>
+		{% endfor %}
+		</select>
+		<input type='submit' />
+	  </form>
+	  
+{% endblock %}

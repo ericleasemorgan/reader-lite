@@ -1,0 +1,13 @@
+{% extends 'base.htm' %}
+
+{% block content %}
+	  <h1>Search</h1>
+	  
+	  <form method='GET' action='/search'>
+		  Carrel: <input name='carrel' />
+		  Query: <input name='query' />
+		  Depth: <input name='depth' />
+		  <input type='submit' />
+	  </form>
+	  
+{% endblock %}
