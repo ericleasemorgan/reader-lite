@@ -1,0 +1,28 @@
+{% extends 'base.htm' %}
+
+{% block content %}
+	  <h1>Choose carrel</h1>
+	  
+	  	<p>Select a carrel ("index") to search. Click on the links to learn more about the carrels.</p>
+	  	
+		<form method='GET' action='/choose/'>
+		<table>
+		<tr><th style='text-align: left'>Carrels</th><th>Sizes in Words</th><th>Selection</th></tr>
+		{% for carrel in carrels %}
+ 			<tr>
+ 				<td><a href='{{carrel[3]}}'>{{carrel[1]}}</a></td>
+ 				<td style='text-align:right'>{{carrel[2]}}</td>
+ 				
+ 				{% if carrel[0] == selected %}
+ 					<td style='text-align:center'><input type="radio" name='carrel' value='{{carrel[0]}}--{{carrel[1]}}--{{carrel[3]}}' checked='checked' /></td>
+ 				{% else %}
+ 					<td style='text-align:center'><input type="radio" name='carrel' value='{{carrel[0]}}--{{carrel[1]}}--{{carrel[3]}}' /></td>
+ 				{% endif %}
+
+ 			</tr>
+ 		{% endfor %}
+		</table>
+		<input type='submit' value='Choose' />
+	  </form>
+	  
+{% endblock %}

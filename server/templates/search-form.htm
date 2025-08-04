@@ -3,11 +3,27 @@
 {% block content %}
 	  <h1>Search</h1>
 	  
-	  <form method='GET' action='/search'>
-		  Carrel: <input name='carrel' />
-		  Query: <input name='query' />
-		  Depth: <input name='depth' />
-		  <input type='submit' />
+	  <p>You are searching <cite><a href='{{carrel[2]}}'>{{carrel[1]}}</a></cite></p>
+	  
+	  <form method='GET' action='/search/'>
+	  <table>
+		  <tr><td style='text-align:right'>Query</td><td><input name='query' size='64' /></td></tr>
+		  <tr><td style='text-align:right'>Number of sentences</td><td>
+		  <select name='depth'>
+		  <option value='1'>1</option>
+		  <option value='2'>2</option>
+		  <option value='4'>4</option>
+		  <option value='8'>8</option>
+		  <option value='16'>16</option>
+		  <option value='32'>32</option>
+		  <option value='64'>64</option>
+		  <option value='128'>128</option>
+		  <option value='256'>256</option>
+		  </select></td></tr>
+		  <tr><td></td><td><input type='submit' value='Search' /></td></tr>
+	  </table>
 	  </form>
+	  
+	  <p>Enter a query such as one, two, three, or more words. Select the number of desired sentences to return. Optionally, peruse <a href='{{carrel[2]}}'>carrel's set of extracted features</a> for the purposes of submitting a more expressive query.</p>
 	  
 {% endblock %}

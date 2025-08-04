@@ -21,7 +21,7 @@ SYSTEMPROMPT  = './etc/system-prompt.txt'
 from flask                    import Flask, render_template, request
 from math                     import exp
 from ollama                   import embed, generate
-from pandas                   import DataFrame
+from pandas                   import DataFrame, read_csv, array
 from pathlib                  import Path
 from re                       import sub
 from scipy.signal             import argrelextrema
@@ -46,7 +46,6 @@ def search( carrel, query, depth ) :
 	library  = Path( LIBRARY )
 	
 	# cache the carrel and query
-	with open( Path( CACHEDCARREL ), 'w' ) as handle : handle.write( carrel )
 	with open( Path( CACHEDQUERY ), 'w' )  as handle : handle.write( query )
 
 	# initialize some more
@@ -138,25 +137,24 @@ server = Flask(__name__)
 
 # home
 @server.route( "/" )
-def home() : 
-
-	return render_template('home.htm' )
-
+def home() : return render_template('home.htm' )
 
 
 # search
 @server.route( "/search/" )
 def searchSimple() :
 
+	# get the cached carrel
+	carrel = open( Path( CACHEDCARREL ) ).read().split( '\t' )
+		
 	# get input
-	carrel = request.args.get('carrel', '')
-	query  = request.args.get('query', '')
-	depth  = request.args.get('depth', '')
+	query = request.args.get('query', '')
+	depth = request.args.get('depth', '')
 
-	if not carrel or not query or not depth : return render_template('search-form.htm' )
+	if not query or not depth : return render_template('search-form.htm', carrel=carrel )
 		
 	# search
-	results = search( carrel, query, depth )
+	results = search( carrel[ 0 ], query, depth )
 	
 	# done
 	return render_template('search.htm', results=results)
@@ -173,7 +171,6 @@ def elaborate() :
 	question = request.args.get('question', '')
 	
 	if not question : return render_template('elaborate-form.htm' )
-
 
 	# initialize
 	context = open( CACHEDRESULTS ).read()
@@ -230,6 +227,32 @@ def persona() :
 	# save
 	with open( Path( SYSTEMPROMPT ), 'w' )   as handle : handle.write( PREFIX + persona + SUFFIX )
 	return render_template('persona.htm', persona=persona )
+	
+
+
+# carrel
+@server.route("/choose/")
+def choose() :
+
+	# configure
+	CARRELS = './etc/carrels.csv'
+	
+	carrels = read_csv( Path( CARRELS ) )
+	carrels = [ row.tolist() for index, row in carrels.iterrows() ]	
+	
+	# get the cached carrel
+	selected = open( Path( CACHEDCARREL ) ).read().split( '\t' )[ 0 ]
+
+	# get input
+	carrel = request.args.get( 'carrel', '' )
+	if not carrel : return render_template('carrel-form.htm', carrels=carrels, selected=selected )
+	
+	# split the input into an array; kinda dumb
+	carrel = carrel.split( '--' )
+			
+	# save
+	with open( Path( CACHEDCARREL ), 'w' )   as handle : handle.write( '\t'.join( carrel ) )
+	return render_template('carrel.htm', carrel=carrel )
 	
 
 
