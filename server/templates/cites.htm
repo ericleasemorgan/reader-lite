@@ -1,0 +1,18 @@
+{% extends 'base.htm' %}
+
+{% block content %}
+	  <h1>Cites</h1>
+	  
+	  	<p>Below is a list of the items from whence the sentences came.</p>
+	  	
+		<table>
+		<tr><th style='text-align: left'>Items</th><th>Number of sentences</th></tr>
+		{% for cite in cites %}
+ 			<tr>
+ 				<td><a href='/{{prefix}}/{{cite[0]}}{{suffix}}'>{{cite[0]}}{{suffix}}</a></td>
+ 				<td style='text-align:center'>{{cite[1]}}</td>
+  			</tr>
+ 		{% endfor %}
+		</table>
+	  
+{% endblock %}

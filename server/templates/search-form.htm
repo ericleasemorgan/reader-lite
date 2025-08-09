@@ -3,7 +3,7 @@
 {% block content %}
 	  <h1>Search</h1>
 	  
-	  <p>You are searching <cite><a href='{{carrel[2]}}'>{{carrel[1]}}</a></cite></p>
+	  <p>When it comes to <cite><a href='{{carrel[2]}}'>{{carrel[1]}}</a></cite>, what do you want to know or read about?</p>
 	  
 	  <form method='GET' action='/search/'>
 	  <table>
@@ -19,11 +19,13 @@
 		  <option value='64'>64</option>
 		  <option value='128'>128</option>
 		  <option value='256'>256</option>
+		  <option value='512'>512</option>
 		  </select></td></tr>
 		  <tr><td></td><td><input type='submit' value='Search' /></td></tr>
 	  </table>
 	  </form>
 	  
-	  <p>Enter a query such as one, two, three, or more words. Select the number of desired sentences to return. Optionally, peruse <a href='{{carrel[2]}}'>carrel's set of extracted features</a> for the purposes of submitting a more expressive query.</p>
+	  <p>Enter a query such as one, two, three, or more words, and then select the number of desired sentences. A paragraph of relevent sentences will be returned. It is strongly suggested you return only one or two senteces to start and gradually increase the number. This way you will get a much better flavor of the results. I promise.</p>
+	  <p>For extra credit, <a href='{{carrel[2]}}'>read the carrel's set of extracted features</a> for the purposes of submitting a more expressive and nuanced queries.</p>
 	  
 {% endblock %}

@@ -1,13 +1,13 @@
 {% extends 'base.htm' %}
 
 {% block content %}
-	  <h1>Choose carrel</h1>
+	  <h1>Choose a book</h1>
 	  
-	  	<p><em>What book do you want to read?</em> Select a carrel ("index") to search. Click on the links to learn more about the carrels.</p>
+	  	<p>What book do you want to read?</p>
 	  	
 		<form method='GET' action='/choose/'>
 		<table>
-		<tr><th style='text-align: left'>Carrels</th><th>Sizes in Words</th><th>Selection</th></tr>
+		<tr><th style='text-align: left'>Books</th><th>Sizes in Words</th><th>Selection</th></tr>
 		{% for carrel in carrels %}
  			<tr>
  				<td><a href='{{carrel[3]}}'>{{carrel[1]}}</a></td>
@@ -21,8 +21,8 @@
 
  			</tr>
  		{% endfor %}
+		<tr><td></td><td></td><td><input type='submit' value='Choose' /></td></tr>
 		</table>
-		<input type='submit' value='Choose' />
 	  </form>
 	  
 {% endblock %}

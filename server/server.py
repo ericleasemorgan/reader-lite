@@ -16,6 +16,8 @@ CACHEDCARREL  = './etc/cached-carrel.txt'
 CACHEDQUERY   = './etc/cached-query.txt'
 CACHEDCITES   = './etc/cached-cites.txt'
 SYSTEMPROMPT  = './etc/system-prompt.txt'
+CACHE         = 'cache'
+CARRELS       = 'carrels'
 
 # require
 from flask                    import Flask, render_template, request
@@ -32,7 +34,6 @@ from struct                   import pack
 from typing                   import List
 import numpy                  as     np
 
-
 # the system's work horse
 def search( carrel, query, depth ) :
 
@@ -40,7 +41,7 @@ def search( carrel, query, depth ) :
 	COLUMNS  = [ 'titles', 'items', 'sentences', 'distances' ]
 	SELECT   = "SELECT title, item, sentence, VEC_DISTANCE_L2(embedding, ?) AS distance FROM sentences ORDER BY distance LIMIT ?"
 	DATABASE = 'sentences.db'
-	LIBRARY  = 'carrels'
+	LIBRARY  = 'server/static/carrels'
 
 	# initialize
 	library  = Path( LIBRARY )
@@ -161,6 +162,27 @@ def searchSimple() :
 
 
 # elaborate
+@server.route( "/cites/" )
+def cites() :
+
+	# configure
+	NAMES  = [ 'items', 'sentences' ]
+	SUFFIX = '.txt'
+	
+	carrel    = open( Path( CACHEDCARREL ) ).read().split( '\t' )[ 0 ]
+	cache     = Path( 'static' )/CARRELS/carrel/CACHE
+	prefix    = str( cache )
+	
+	cites = read_csv( CACHEDCITES, sep='\t', names=NAMES )
+	cites = cites.groupby( [ 'items' ], as_index=False )[ 'sentences' ].count()
+	cites = cites.sort_values( 'sentences', ascending=False )
+	cites = [ row.tolist() for index, row in cites.iterrows() ]	
+
+	# done
+	return render_template('cites.htm', cites=cites, prefix=prefix, suffix=SUFFIX )
+
+
+# cites
 @server.route( "/elaborate/" )
 def elaborate() :
 
@@ -185,7 +207,6 @@ def elaborate() :
 	response = '<p>' + response + '</p>'
 
 	# done
-	#return( response )
 	return render_template('elaborate.htm', results=response )
 
 
@@ -272,8 +293,10 @@ def format() :
 	#try : similarities = activate_similarities( cosine_similarity(embeddings), p_size=PSIZE )
 	#except ValueError as error : exit( "Number of sentences too small. If this error continues, call Eric.\n" )
 
-	similarities = activate_similarities( cosine_similarity(embeddings), p_size=PSIZE )
+	try : similarities = activate_similarities( cosine_similarity(embeddings), p_size=PSIZE )
+	except ValueError : return render_template('format-error.htm' )
 
+	
 	minmimas = argrelextrema( similarities, np.less, order=2 )
 
 	# Get the order number of the sentences which are in splitting points
