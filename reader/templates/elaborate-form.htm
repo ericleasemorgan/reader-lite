@@ -3,9 +3,13 @@
 {% block content %}
 	  <h1>Elaborate</h1>
 	  
+	  <p>What do you want to know?</p>
+	  
 	  <form method='GET' action='/elaborate/'>
-		  Question: <input name='question' value='{{question}}'/>
-		  <input type='submit' />
+		  Question <input name='question' size='64' value='{{question}}' />
+		  <input type='submit' value='Elaborate' />
 	  </form>
+	  
+	  <p>Submit a question, and it will be addressed using the search results for the basis of the answer.</p>
 	  
 {% endblock %}

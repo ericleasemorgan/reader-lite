@@ -21,6 +21,7 @@ CARRELS        = 'carrels'
 CATALOG        = './etc/catalog.csv'
 STATIC         = 'static'
 SYSTEMPROMPT   = './etc/system-prompt.txt'
+DATABASE       = 'sentences.db'
 
 # require
 from flask                    import Flask, render_template, request
@@ -42,13 +43,33 @@ import numpy                  as     np
 server = Flask(__name__)
 
 
+# question
+@server.route("/question/")
+def question() :
+
+	# configure
+	SELECT = 'SELECT sentence FROM sentences WHERE sentence LIKE "%?" ORDER BY RANDOM() LIMIT 1'
+
+	# initialize
+	library  = Path( STATIC )/CARRELS
+	carrel   = open( Path( CACHEDCARREL ) ).read().split( '\t' )[ 0 ]
+	database = connect( library/carrel/DATABASE, check_same_thread=False )
+	database.enable_load_extension( True )
+	load( database )
+	
+	# do the work
+	question = database.execute( SELECT ).fetchone()[ 0 ]
+	
+	# done
+	return render_template( 'question.htm', question=question )
+
+
 # the system's work horse
 def search( carrel, query, depth ) :
 
 	# configure
 	COLUMNS  = [ 'titles', 'items', 'sentences', 'distances' ]
 	SELECT   = "SELECT title, item, sentence, VEC_DISTANCE_L2(embedding, ?) AS distance FROM sentences ORDER BY distance LIMIT ?"
-	DATABASE = 'sentences.db'
 
 	# initialize
 	library  = Path( STATIC )/CARRELS
@@ -107,6 +128,17 @@ def search( carrel, query, depth ) :
 # home
 @server.route( "/" )
 def home() : return render_template('home.htm' )
+
+
+# reviuew
+@server.route( "/review/" )
+def review() : 
+
+	with open( Path( CACHEDRESULTS ) ) as handle : results = handle.read().splitlines()
+	results = ' '.join( results )
+
+	return render_template('search.htm', results=results)
+
 
 
 # search

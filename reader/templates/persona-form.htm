@@ -6,7 +6,7 @@
 	  <p>When summarizing or elaborating, what sort of person to you want the system to impersonate?</p>
 	  
 	  <form method='GET' action='/persona/'>
-		<select name='persona'>
+		Persona <select name='persona'>
 		{% for persona in personas %}
  			<option value='{{ persona }}'>{{ persona }}</option>
 		{% endfor %}
