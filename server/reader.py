@@ -1,23 +1,26 @@
 #!/usr/bin/env python
 
-# server.py - a Web interface to the index of Distant Reader sentence embeddings lite
+# reader.py - a Web interface to the index of Distant Reader sentence embeddings lite
 
 # Eric Lease Morgan <emorgan@nd.edu>
 # (c) Infomotions, LLC; distributed under a GNU Public License
 
 # August 3, 2025 - first investigations; rooted in the non-lite version so I can share and demonstrate
+# August 9, 2025 - added more things than I can count, but as of now, all functions work
 
 
 # configure
-EMBEDDER      = 'nomic-embed-text'
-LLM           = 'llama2'
-CACHEDRESULTS = './etc/cached-results.txt'
-CACHEDCARREL  = './etc/cached-carrel.txt'
-CACHEDQUERY   = './etc/cached-query.txt'
-CACHEDCITES   = './etc/cached-cites.txt'
-SYSTEMPROMPT  = './etc/system-prompt.txt'
-CACHE         = 'cache'
-CARRELS       = 'carrels'
+EMBEDDER       = 'nomic-embed-text'
+LLM            = 'llama2'
+CACHEDCARREL   = './etc/cached-carrel.txt'
+CACHEDCITES    = './etc/cached-cites.txt'
+CACHEDQUERY    = './etc/cached-query.txt'
+CACHEDQUESTION = './etc/cached-question.txt'
+CACHEDRESULTS  = './etc/cached-results.txt'
+CARRELS        = 'carrels'
+CATALOG        = './etc/catalog.csv'
+STATIC         = 'static'
+SYSTEMPROMPT   = './etc/system-prompt.txt'
 
 # require
 from flask                    import Flask, render_template, request
@@ -34,6 +37,11 @@ from struct                   import pack
 from typing                   import List
 import numpy                  as     np
 
+
+# initialize
+server = Flask(__name__)
+
+
 # the system's work horse
 def search( carrel, query, depth ) :
 
@@ -41,18 +49,15 @@ def search( carrel, query, depth ) :
 	COLUMNS  = [ 'titles', 'items', 'sentences', 'distances' ]
 	SELECT   = "SELECT title, item, sentence, VEC_DISTANCE_L2(embedding, ?) AS distance FROM sentences ORDER BY distance LIMIT ?"
 	DATABASE = 'sentences.db'
-	LIBRARY  = 'server/static/carrels'
 
 	# initialize
-	library  = Path( LIBRARY )
-	
-	# cache the carrel and query
-	with open( Path( CACHEDQUERY ), 'w' )  as handle : handle.write( query )
-
-	# initialize some more
+	library  = Path( STATIC )/CARRELS
 	database = connect( library/carrel/DATABASE, check_same_thread=False )
 	database.enable_load_extension( True )
 	load( database )
+
+	# cache the query for possible future reference
+	with open( Path( CACHEDQUERY ), 'w' )   as handle : handle.write( '\t'.join( [ query, depth ] ) )
 
 	# vectorize query and search; get a set of matching records
 	query   = embed( model=EMBEDDER, input=query ).model_dump( mode='json' )[ 'embeddings' ][ 0 ]
@@ -69,7 +74,7 @@ def search( carrel, query, depth ) :
 		distance = record[ 3 ]
 		
 		# update
-		sentences.append( [title, item, sentence, distance ] )
+		sentences.append( [ title, item, sentence, distance ] )
 	
 	# create a dataframe of the sentences and sort by title
 	sentences = DataFrame( sentences, columns=COLUMNS )
@@ -89,7 +94,7 @@ def search( carrel, query, depth ) :
 		results.append( sentence )
 		cites.append( '\t'.join( [ title, str( item ) ] ) )
 		
-	# save the remaining caches
+	# cache citres, results, and query; retain state, sort of
 	with open( Path( CACHEDCITES ), 'w' )   as handle : handle.write( '\n'.join( cites ) )
 	with open( Path( CACHEDRESULTS ), 'w' ) as handle : handle.write( '\n'.join( results ) )
 
@@ -97,6 +102,210 @@ def search( carrel, query, depth ) :
 	results = ' '.join( results )
 	return( results )
 	
+
+
+# home
+@server.route( "/" )
+def home() : return render_template('home.htm' )
+
+
+# search
+@server.route( "/search/" )
+def searchSimple() :
+
+	# get the catalog as a list of lists
+	catalog = getCatalog( CATALOG )
+	
+	# get the caches
+	previousCarrel = open( Path( CACHEDCARREL ) ).read().split( '\t' )[ 0 ]
+	previousQuery  = open( Path( CACHEDQUERY ) ).read().split( '\t' )[ 0 ]
+	previousDepth  = open( Path( CACHEDQUERY ) ).read().split( '\t' )[ 1 ]
+		
+	# get input
+	carrel = request.args.get( 'carrel', '' )
+	query  = request.args.get( 'query', '' )
+	depth  = request.args.get( 'depth', '' )
+
+	# return the search form
+	if not carrel or not query or not depth : return render_template('search-form.htm', catalog=catalog, carrel=previousCarrel, query=previousQuery, depth=previousDepth )
+		
+	# split the input into an array; kinda dumb
+	carrel = carrel.split( '--' )
+
+	# cache the carrel
+	with open( Path( CACHEDCARREL ), 'w' ) as handle : handle.write( '\t'.join( carrel ) )
+
+	# search
+	results = search( carrel[ 0 ], query, depth )
+	
+	# done
+	return render_template('search.htm', results=results)
+
+
+# elaborate
+@server.route( "/cites/" )
+def cites() :
+
+	# configure
+	NAMES  = [ 'items', 'sentences' ]
+	SUFFIX = '.txt'
+	CACHE  = 'cache'
+
+	# initialize
+	carrel = open( Path( CACHEDCARREL ) ).read().split( '\t' )[ 0 ]
+	cache  = Path( STATIC )/CARRELS/carrel/CACHE
+	prefix = str( cache )
+	
+	cites = read_csv( CACHEDCITES, sep='\t', names=NAMES )
+	cites = cites.groupby( [ 'items' ], as_index=False )[ 'sentences' ].count()
+	cites = cites.sort_values( 'sentences', ascending=False )
+	cites = [ row.tolist() for index, row in cites.iterrows() ]	
+
+	# done
+	return render_template('cites.htm', cites=cites, prefix=prefix, suffix=SUFFIX )
+
+
+# cites
+@server.route( "/elaborate/" )
+def elaborate() :
+
+	# configure
+	PROMPT = 'Answer the question "%s" and use only the following as the source of the answer: %s'
+
+	previousQuestion = open( Path( CACHEDQUESTION ) ).read()
+
+	# get input
+	question = request.args.get( 'question', '' )
+	
+	if not question : return render_template('elaborate-form.htm', question=previousQuestion )
+
+	# cache the question
+	with open( Path( CACHEDQUESTION ), 'w' ) as handle : handle.write( question )
+
+	# initialize
+	context = open( CACHEDRESULTS ).read()
+	system  = open( SYSTEMPROMPT ).read()
+	prompt  = ( PROMPT % ( question, context ))
+
+	# do the work
+	result = generate( LLM, prompt, system=system )
+
+	# reformat the results
+	response = sub( '\n\n', '</p><p>', result[ 'response' ] ) 
+	response = '<p>' + response + '</p>'
+
+	# done
+	return render_template('elaborate.htm', results=response )
+
+
+# summarize
+@server.route("/summarize/")
+def summarize() :
+
+	# configure
+	PROMPT = 'Summarize the following: %s'
+
+	# initialize
+	context = open( CACHEDRESULTS ).read()
+	system  = open( SYSTEMPROMPT ).read()
+	prompt  = ( PROMPT % ( context ) )
+
+	# try to get a responese
+	try: results = generate( LLM, prompt, system=system )
+	except ConnectionError : exit( 'Ollama is probably not running. Start it. Otherwise, call Eric.' )
+	
+	# normalize a bit
+	response = sub( '\n\n', '</p><p>', results[ 'response' ] ) 
+	results = '<p>' + response + '</p>'
+
+	# done
+	return render_template( 'summarize.htm', results=results )
+
+
+# persona
+@server.route("/persona/")
+def persona() :
+
+	# configure
+	PERSONAS = [ 'a child in the second grade', 'a child in the eigth grade', 'a high school valedictorian', 'a sophmoric college student', 'a helpful librarian', 'a university professor', 'an erudite scholar' ]
+	PREFIX   = 'You are '
+	SUFFIX   = '.'
+
+	# get input
+	persona = request.args.get( 'persona', '' )
+	if not persona : return render_template('persona-form.htm', personas=PERSONAS )
+
+	# save
+	with open( Path( SYSTEMPROMPT ), 'w' )   as handle : handle.write( PREFIX + persona + SUFFIX )
+	return render_template('persona.htm', persona=persona )
+	
+
+
+# carrel
+@server.route("/choose/")
+def choose() :
+
+	# get the catalog as a list of lists
+	catalog = getCatalog( CATALOG )
+	
+	# get the cached carrel
+	selected = open( Path( CACHEDCARREL ) ).read().split( '\t' )[ 0 ]
+
+	# get input
+	carrel = request.args.get( 'carrel', '' )
+	if not carrel : return render_template('carrel-form.htm', carrels=catalog, selected=selected )
+	
+	# split the input into an array; kinda dumb
+	carrel = carrel.split( '--' )
+			
+	# save
+	with open( Path( CACHEDCARREL ), 'w' )   as handle : handle.write( '\t'.join( carrel ) )
+	return render_template( 'carrel.htm', carrel=carrel )
+	
+
+# format
+@server.route("/format/")
+def format() :
+
+	# configure
+	PSIZE = 16
+
+	# initialize
+	sentences = open( CACHEDRESULTS ).read().splitlines()
+
+	# vectorize and activate similaritites; for longer sentences increase the value of PSIZE
+	embeddings = embed( model=EMBEDDER, input=sentences ).model_dump( mode='json' )[ 'embeddings' ]
+
+	# try to compute similarities
+	try               : similarities = activate_similarities( cosine_similarity(embeddings), p_size=PSIZE )
+	except ValueError : return render_template('format-error.htm' )
+
+	# compute minmimas
+	minmimas = argrelextrema( similarities, np.less, order=2 )
+
+	# Get the order number of the sentences which are in splitting points
+	splits = [ minmima for minmima in minmimas[ 0 ] ]
+
+	# Create empty string
+	text = ''
+	for index, sentence in enumerate( sentences ) :
+	
+		# check if sentence is a minima (splitting point)
+		if index in splits : text += f'\n\n{sentence} '
+		else               : text += f'{sentence} '
+
+	# do the tiniest bit of normalization
+	text = sub( ' +', ' ', text ) 
+	text = '<p>' + sub( '\n\n', '</p><p>', text ) + '</p>'
+
+	# done
+	return render_template('format.htm', results=text )
+
+
+# format
+@server.route("/next/")
+def next() : 	return render_template('next.htm' )
+
 
 # serializes a list of floats into a compact "raw bytes" format; makes things more efficient?
 def serialize( vector: List[float]) -> bytes : return pack( "%sf" % len( vector ), *vector )
@@ -133,189 +342,12 @@ def activate_similarities( similarities:np.array, p_size=10 )->np.array :
         return( activated_similarities )
 
 
-# configure
-server = Flask(__name__)
-
-# home
-@server.route( "/" )
-def home() : return render_template('home.htm' )
-
-
-# search
-@server.route( "/search/" )
-def searchSimple() :
-
-	# get the cached carrel
-	carrel = open( Path( CACHEDCARREL ) ).read().split( '\t' )
-		
-	# get input
-	query = request.args.get('query', '')
-	depth = request.args.get('depth', '')
-
-	if not query or not depth : return render_template('search-form.htm', carrel=carrel )
-		
-	# search
-	results = search( carrel[ 0 ], query, depth )
+# get catalog
+def getCatalog( catalog ) :
 	
-	# done
-	return render_template('search.htm', results=results)
+	catalog = read_csv( Path( catalog ) )
+	catalog = [ row.tolist() for index, row in catalog.iterrows() ]	
 
-
-# elaborate
-@server.route( "/cites/" )
-def cites() :
-
-	# configure
-	NAMES  = [ 'items', 'sentences' ]
-	SUFFIX = '.txt'
+	return( catalog )
 	
-	carrel    = open( Path( CACHEDCARREL ) ).read().split( '\t' )[ 0 ]
-	cache     = Path( 'static' )/CARRELS/carrel/CACHE
-	prefix    = str( cache )
-	
-	cites = read_csv( CACHEDCITES, sep='\t', names=NAMES )
-	cites = cites.groupby( [ 'items' ], as_index=False )[ 'sentences' ].count()
-	cites = cites.sort_values( 'sentences', ascending=False )
-	cites = [ row.tolist() for index, row in cites.iterrows() ]	
-
-	# done
-	return render_template('cites.htm', cites=cites, prefix=prefix, suffix=SUFFIX )
-
-
-# cites
-@server.route( "/elaborate/" )
-def elaborate() :
-
-	# configure
-	PROMPT = 'Answer the question "%s" and use only the following as the source of the answer: %s'
-
-	# get input
-	question = request.args.get('question', '')
-	
-	if not question : return render_template('elaborate-form.htm' )
-
-	# initialize
-	context = open( CACHEDRESULTS ).read()
-	system  = open( SYSTEMPROMPT ).read()
-	prompt  = ( PROMPT % ( question, context ))
-
-	# do the work
-	result = generate( LLM, prompt, system=system )
-
-	# reformat the results
-	response = sub( '\n\n', '</p><p>', result[ 'response' ] ) 
-	response = '<p>' + response + '</p>'
-
-	# done
-	return render_template('elaborate.htm', results=response )
-
-
-# summarize
-@server.route("/summarize/")
-def summarize() :
-
-	# configure
-	PROMPT = 'Summarize the following: %s'
-
-	# initialize
-	context = open( CACHEDRESULTS ).read()
-	system  = open( SYSTEMPROMPT ).read()
-	prompt  = ( PROMPT % ( context ) )
-
-	try: results = generate( LLM, prompt, system=system )
-	except ConnectionError : exit( 'Ollama is probably not running. Start it. Otherwise, call Eric.' )
-	
-	response = sub( '\n\n', '</p><p>', results[ 'response' ] ) 
-	results = '<p>' + response + '</p>'
-
-	#return( response )
-	return render_template('summarize.htm', results=results )
-
-
-# persona
-@server.route("/persona/")
-def persona() :
-
-	# configure
-	PERSONAS = [ 'a child in the second grade', 'a child in the eigth grade', 'a high school valedictorian', 'a sophmoric college student', 'a helpful librarian', 'a university professor', 'an erudite scholar' ]
-	PREFIX   = 'You are '
-	SUFFIX   = '.'
-
-	# get input
-	persona = request.args.get( 'persona', '' )
-	if not persona : return render_template('persona-form.htm', personas=PERSONAS )
-
-	# save
-	with open( Path( SYSTEMPROMPT ), 'w' )   as handle : handle.write( PREFIX + persona + SUFFIX )
-	return render_template('persona.htm', persona=persona )
-	
-
-
-# carrel
-@server.route("/choose/")
-def choose() :
-
-	# configure
-	CARRELS = './etc/carrels.csv'
-	
-	carrels = read_csv( Path( CARRELS ) )
-	carrels = [ row.tolist() for index, row in carrels.iterrows() ]	
-	
-	# get the cached carrel
-	selected = open( Path( CACHEDCARREL ) ).read().split( '\t' )[ 0 ]
-
-	# get input
-	carrel = request.args.get( 'carrel', '' )
-	if not carrel : return render_template('carrel-form.htm', carrels=carrels, selected=selected )
-	
-	# split the input into an array; kinda dumb
-	carrel = carrel.split( '--' )
-			
-	# save
-	with open( Path( CACHEDCARREL ), 'w' )   as handle : handle.write( '\t'.join( carrel ) )
-	return render_template('carrel.htm', carrel=carrel )
-	
-
-
-# format
-@server.route("/format/")
-def format() :
-
-	# configure
-	PSIZE = 16
-
-	# initialize
-	sentences = open( CACHEDRESULTS ).read().splitlines()
-
-	# vectorize and activated similaritites; for longer sentences increase the value of PSIZE
-	embeddings = embed( model=EMBEDDER, input=sentences ).model_dump( mode='json' )[ 'embeddings' ]
-
-	#try : similarities = activate_similarities( cosine_similarity(embeddings), p_size=PSIZE )
-	#except ValueError as error : exit( "Number of sentences too small. If this error continues, call Eric.\n" )
-
-	try : similarities = activate_similarities( cosine_similarity(embeddings), p_size=PSIZE )
-	except ValueError : return render_template('format-error.htm' )
-
-	
-	minmimas = argrelextrema( similarities, np.less, order=2 )
-
-	# Get the order number of the sentences which are in splitting points
-	splits = [ minmima for minmima in minmimas[ 0 ] ]
-
-	# Create empty string
-	text = ''
-	for index, sentence in enumerate( sentences ) :
-	
-		# Check if sentence is a minima (splitting point)
-		if index in splits : text += f'\n\n{sentence} '
-		else               : text += f'{sentence} '
-
-	# do the tiniest bit of normalization
-	text = sub( ' +', ' ', text ) 
-	text = '<p>' + sub( '\n\n', '</p><p>', text ) + '</p>'
-
-	# done
-	#return( sentences )
-	return render_template('format.htm', results=text )
-
 

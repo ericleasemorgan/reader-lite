@@ -3,11 +3,24 @@
 {% block content %}
 	  <h1>Search</h1>
 	  
-	  <p>When it comes to <cite><a href='{{carrel[2]}}'>{{carrel[1]}}</a></cite>, what do you want to know or read about?</p>
+	  <p>When it comes to the selected book, what do you want to know or read about?</p>
 	  
 	  <form method='GET' action='/search/'>
 	  <table>
-		  <tr><td style='text-align:right'>Query</td><td><input name='query' size='64' /></td></tr>
+		  <tr><td style='text-align:right'>Book</td>
+		      <td>
+		         <select name='carrel'>
+		           {% for book in catalog %}
+                     {% if book[ 0 ] == carrel %}
+                       <option value='{{book[0]}}--{{book[1]}}--{{book[3]}}' selected='selected' >{{book[ 1 ] }}</option>
+ 				     {% else %}
+                        <option value='{{book[0]}}--{{book[1]}}--{{book[3]}}'>{{book[ 1 ] }}</option>
+ 				     {% endif %}
+		         {% endfor %}
+		        </select>
+		      </td>
+	      </tr>
+		  <tr><td style='text-align:right'>Query</td><td><input name='query' value='{{query}}' size='64' /></td></tr>
 		  <tr><td style='text-align:right'>Number of sentences</td><td>
 		  <select name='depth'>
 		  <option value='1'>1</option>
@@ -25,7 +38,13 @@
 	  </table>
 	  </form>
 	  
-	  <p>Enter a query such as one, two, three, or more words, and then select the number of desired sentences. A paragraph of relevent sentences will be returned. It is strongly suggested you return only one or two senteces to start and gradually increase the number. This way you will get a much better flavor of the results. I promise.</p>
-	  <p>For extra credit, <a href='{{carrel[2]}}'>read the carrel's set of extracted features</a> for the purposes of submitting a more expressive and nuanced queries.</p>
+	  <p>Enter a query such as one, two, or more words, and then select the number of desired sentences. A paragraph of relevent sentences will be returned. It is strongly suggested you return only one or two sentences to start and gradually increase the number. By doing so you will get a much better flavor of the results. I promise.</p>
+	  <p>For extra credit and more meaningful search results, garner the scope of each book by reading the books' about pages. These pages enumerate, describe, and illustrate characteristics of each book enabling you to articulate more meaningful and nuanced queries:</p>
+	  <ul>
+		{% for book in catalog %}
+		<li><a href='{{book[3]}}'>{{book[1]}}</a></li>
+		{% endfor %}
+
+	  </ul>
 	  
 {% endblock %}

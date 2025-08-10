@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-flask --app ./server/server run --debug
+flask --app reader run --debug
