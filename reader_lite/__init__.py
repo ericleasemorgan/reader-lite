@@ -10,23 +10,24 @@
 
 
 # configure
-EMBEDDER       = 'nomic-embed-text'
-LLM            = 'llama2'
-CACHEDCARREL   = './etc/cached-carrel.txt'
-CACHEDCITES    = './etc/cached-cites.txt'
-CACHEDQUERY    = './etc/cached-query.txt'
-CACHEDQUESTION = './etc/cached-question.txt'
-CACHEDRESULTS  = './etc/cached-results.txt'
+CACHEDCARREL   = 'cached-carrel.txt'
+CACHEDCITES    = 'cached-cites.txt'
+CACHEDQUERY    = 'cached-query.txt'
+CACHEDQUESTION = 'cached-question.txt'
+CACHEDRESULTS  = 'cached-results.txt'
 CARRELS        = 'carrels'
-CATALOG        = './etc/catalog.csv'
-STATIC         = 'static'
-SYSTEMPROMPT   = './etc/system-prompt.txt'
+CATALOG        = 'catalog.csv'
 DATABASE       = 'sentences.db'
+EMBEDDER       = 'nomic-embed-text'
+ETC            = 'etc'
+LLM            = 'llama2'
+SYSTEMPROMPT   = 'system-prompt.txt'
 
 # require
 from flask                    import Flask, render_template, request
 from math                     import exp
 from ollama                   import embed, generate
+from os.path                  import dirname
 from pandas                   import DataFrame, read_csv, array
 from pathlib                  import Path
 from re                       import sub
@@ -38,9 +39,13 @@ from struct                   import pack
 from typing                   import List
 import numpy                  as     np
 
-
 # initialize
 server = Flask(__name__)
+cwd    = Path( dirname( __file__ ) )
+
+# home
+@server.route( "/" )
+def home() : return render_template('home.htm' )
 
 
 # question
@@ -51,8 +56,8 @@ def question() :
 	SELECT = 'SELECT sentence FROM sentences WHERE sentence LIKE "%?" ORDER BY RANDOM() LIMIT 1'
 
 	# initialize
-	library  = Path( STATIC )/CARRELS
-	carrel   = open( Path( CACHEDCARREL ) ).read().split( '\t' )[ 0 ]
+	library  = cwd/ETC/CARRELS	
+	carrel   = open( cwd/ETC/CACHEDCARREL ).read().split( '\t' )[ 0 ]
 	database = connect( library/carrel/DATABASE, check_same_thread=False )
 	database.enable_load_extension( True )
 	load( database )
@@ -72,13 +77,13 @@ def search( carrel, query, depth ) :
 	SELECT   = "SELECT title, item, sentence, VEC_DISTANCE_L2(embedding, ?) AS distance FROM sentences ORDER BY distance LIMIT ?"
 
 	# initialize
-	library  = Path( STATIC )/CARRELS
+	library  = cwd/ETC/CARRELS		
 	database = connect( library/carrel/DATABASE, check_same_thread=False )
 	database.enable_load_extension( True )
 	load( database )
 
 	# cache the query for possible future reference
-	with open( Path( CACHEDQUERY ), 'w' )   as handle : handle.write( '\t'.join( [ query, depth ] ) )
+	with open( cwd/ETC/CACHEDQUERY, 'w' ) as handle : handle.write( '\t'.join( [ query, depth ] ) )
 
 	# vectorize query and search; get a set of matching records
 	query   = embed( model=EMBEDDER, input=query ).model_dump( mode='json' )[ 'embeddings' ][ 0 ]
@@ -116,8 +121,8 @@ def search( carrel, query, depth ) :
 		cites.append( '\t'.join( [ title, str( item ) ] ) )
 		
 	# cache citres, results, and query; retain state, sort of
-	with open( Path( CACHEDCITES ), 'w' )   as handle : handle.write( '\n'.join( cites ) )
-	with open( Path( CACHEDRESULTS ), 'w' ) as handle : handle.write( '\n'.join( results ) )
+	with open( cwd/ETC/CACHEDCITES, 'w' )   as handle : handle.write( '\n'.join( cites ) )
+	with open( cwd/ETC/CACHEDRESULTS, 'w' ) as handle : handle.write( '\n'.join( results ) )
 
 	# format the result and done
 	results = ' '.join( results )
@@ -125,16 +130,11 @@ def search( carrel, query, depth ) :
 	
 
 
-# home
-@server.route( "/" )
-def home() : return render_template('home.htm' )
-
-
 # reviuew
 @server.route( "/review/" )
 def review() : 
 
-	with open( Path( CACHEDRESULTS ) ) as handle : results = handle.read().splitlines()
+	with open( cwd/ETC/CACHEDRESULTS ) as handle : results = handle.read().splitlines()
 	results = ' '.join( results )
 
 	return render_template('search.htm', results=results)
@@ -146,12 +146,12 @@ def review() :
 def searchSimple() :
 
 	# get the catalog as a list of lists
-	catalog = getCatalog( CATALOG )
+	catalog = getCatalog( cwd/ETC/CATALOG )
 	
 	# get the caches
-	previousCarrel = open( Path( CACHEDCARREL ) ).read().split( '\t' )[ 0 ]
-	previousQuery  = open( Path( CACHEDQUERY ) ).read().split( '\t' )[ 0 ]
-	previousDepth  = open( Path( CACHEDQUERY ) ).read().split( '\t' )[ 1 ]
+	previousCarrel = open( cwd/ETC/CACHEDCARREL ).read().split( '\t' )[ 0 ]
+	previousQuery  = open( cwd/ETC/CACHEDQUERY ).read().split( '\t' )[ 0 ]
+	previousDepth  = open( cwd/ETC/CACHEDQUERY ).read().split( '\t' )[ 1 ]
 		
 	# get input
 	carrel = request.args.get( 'carrel', '' )
@@ -165,8 +165,8 @@ def searchSimple() :
 	carrel = carrel.split( '--' )
 
 	# cache the carrel
-	with open( Path( CACHEDCARREL ), 'w' ) as handle : handle.write( '\t'.join( carrel ) )
-
+	with open( cwd/ETC/CACHEDCARREL, 'w' ) as handle : handle.write( '\t'.join( carrel ) )
+	
 	# search
 	results = search( carrel[ 0 ], query, depth )
 	
@@ -184,11 +184,11 @@ def cites() :
 	CACHE  = 'cache'
 
 	# initialize
-	carrel = open( Path( CACHEDCARREL ) ).read().split( '\t' )[ 0 ]
-	cache  = Path( STATIC )/CARRELS/carrel/CACHE
+	carrel = open( cwd/ETC/CACHEDCARREL ).read().split( '\t' )[ 0 ]
+	cache  = cwd/CARRELS/carrel/CACHE
 	prefix = str( cache )
 	
-	cites = read_csv( CACHEDCITES, sep='\t', names=NAMES )
+	cites = read_csv( cwd/ETC/CACHEDCITES, sep='\t', names=NAMES )
 	cites = cites.groupby( [ 'items' ], as_index=False )[ 'sentences' ].count()
 	cites = cites.sort_values( 'sentences', ascending=False )
 	cites = [ row.tolist() for index, row in cites.iterrows() ]	
@@ -204,7 +204,7 @@ def elaborate() :
 	# configure
 	PROMPT = 'Answer the question "%s" and use only the following as the source of the answer: %s'
 
-	previousQuestion = open( Path( CACHEDQUESTION ) ).read()
+	previousQuestion = open( cwd/ETC/CACHEDQUESTION ).read()
 
 	# get input
 	question = request.args.get( 'question', '' )
@@ -212,11 +212,11 @@ def elaborate() :
 	if not question : return render_template('elaborate-form.htm', question=previousQuestion )
 
 	# cache the question
-	with open( Path( CACHEDQUESTION ), 'w' ) as handle : handle.write( question )
+	with open( cwd/ETC/CACHEDQUESTION, 'w' ) as handle : handle.write( question )
 
 	# initialize
-	context = open( CACHEDRESULTS ).read()
-	system  = open( SYSTEMPROMPT ).read()
+	context = open( cwd/ETC/CACHEDRESULTS ).read()
+	system  = open( cwd/ETC/SYSTEMPROMPT ).read()
 	prompt  = ( PROMPT % ( question, context ))
 
 	# do the work
@@ -238,8 +238,8 @@ def summarize() :
 	PROMPT = 'Summarize the following: %s'
 
 	# initialize
-	context = open( CACHEDRESULTS ).read()
-	system  = open( SYSTEMPROMPT ).read()
+	context = open( cwd/ETC/CACHEDRESULTS ).read()
+	system  = open( cwd/ETC/SYSTEMPROMPT ).read()
 	prompt  = ( PROMPT % ( context ) )
 
 	# try to get a responese
@@ -268,7 +268,7 @@ def persona() :
 	if not persona : return render_template('persona-form.htm', personas=PERSONAS )
 
 	# save
-	with open( Path( SYSTEMPROMPT ), 'w' )   as handle : handle.write( PREFIX + persona + SUFFIX )
+	with open( cwd/ETC/SYSTEMPROMPT, 'w' )   as handle : handle.write( PREFIX + persona + SUFFIX )
 	return render_template('persona.htm', persona=persona )
 	
 
@@ -278,10 +278,10 @@ def persona() :
 def choose() :
 
 	# get the catalog as a list of lists
-	catalog = getCatalog( CATALOG )
+	catalog = getCatalog( cwd/ETC/CATALOG )
 	
 	# get the cached carrel
-	selected = open( Path( CACHEDCARREL ) ).read().split( '\t' )[ 0 ]
+	selected = open( cwd/ETC/CACHEDCARREL ).read().split( '\t' )[ 0 ]
 
 	# get input
 	carrel = request.args.get( 'carrel', '' )
@@ -291,7 +291,7 @@ def choose() :
 	carrel = carrel.split( '--' )
 			
 	# save
-	with open( Path( CACHEDCARREL ), 'w' )   as handle : handle.write( '\t'.join( carrel ) )
+	with open( cwd/ETC/CACHEDCARREL, 'w' )   as handle : handle.write( '\t'.join( carrel ) )
 	return render_template( 'carrel.htm', carrel=carrel )
 	
 
@@ -303,8 +303,8 @@ def format() :
 	PSIZE = 16
 
 	# initialize
-	sentences = open( CACHEDRESULTS ).read().splitlines()
-
+	sentences = open( cwd/ETC/CACHEDRESULTS ).read().splitlines()
+	
 	# vectorize and activate similaritites; for longer sentences increase the value of PSIZE
 	embeddings = embed( model=EMBEDDER, input=sentences ).model_dump( mode='json' )[ 'embeddings' ]
 
@@ -377,7 +377,7 @@ def activate_similarities( similarities:np.array, p_size=10 )->np.array :
 # get catalog
 def getCatalog( catalog ) :
 	
-	catalog = read_csv( Path( catalog ) )
+	catalog = read_csv( cwd/ETC/CATALOG )
 	catalog = [ row.tolist() for index, row in catalog.iterrows() ]	
 
 	return( catalog )

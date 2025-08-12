@@ -1,4 +1,8 @@
-homer-odyssey_06	39
-homer-odyssey_08	185
-homer-odyssey_09	47
-homer-odyssey_13	66
+austen-emma_005-1815	15
+austen-emma_005-1815	17
+austen-emma_005-1815	20
+austen-emma_005-1815	48
+austen-emma_032-1815	200
+austen-emma_035-1815	63
+austen-emma_035-1815	73
+austen-emma_039-1815	28
