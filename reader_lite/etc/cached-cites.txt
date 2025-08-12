@@ -1,8 +1,16 @@
 thoreau-walden_001_economy-1854	29
+thoreau-walden_001_economy-1854	49
+thoreau-walden_001_economy-1854	299
+thoreau-walden_001_economy-1854	343
 thoreau-walden_001_economy-1854	692
 thoreau-walden_005_solitude-1854	108
+thoreau-walden_006_visitors-1854	62
+thoreau-walden_006_visitors-1854	86
+thoreau-walden_006_visitors-1854	181
 thoreau-walden_009_ponds-1854	129
 thoreau-walden_011_higher_laws-1854	83
+thoreau-walden_014_former_inhabitants-1854	24
+thoreau-walden_014_former_inhabitants-1854	144
 thoreau-walden_015_winter_animals-1854	58
 thoreau-walden_017_spring-1854	84
 thoreau-walden_017_spring-1854	169
