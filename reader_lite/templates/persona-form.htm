@@ -1,17 +1,22 @@
 {% extends 'base.htm' %}
 
 {% block content %}
-	  <h1>Set Persona</h1>
+	  <h1>Set persona</h1>
 	  
 	  <p>When summarizing or elaborating, what sort of person to you want the system to impersonate?</p>
 	  
 	  <form method='GET' action='/persona/'>
 		Persona <select name='persona'>
 		{% for persona in personas %}
- 			<option value='{{ persona }}'>{{ persona }}</option>
+			{% if persona == selected %}
+				<option value='{{ persona }}' selected='selected'>{{ persona }}</option>
+			{% else %}
+				<option value='{{ persona }}'>{{ persona }}</option>
+			{% endif %}
+
 		{% endfor %}
 		</select>
-		<input type='submit' />
+		<input type='submit' value='Set' />
 	  </form>
 	  
 {% endblock %}

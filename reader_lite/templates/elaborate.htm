@@ -2,5 +2,6 @@
 
 {% block content %}
 	  <h1>Elaboration</h1>
+	  <p>You asked "{{question}}" of the search results, and below is the response as if the system were {{persona}}:</p>
 	  <blockquote>{{results|safe}}</blockquote>
 {% endblock %}

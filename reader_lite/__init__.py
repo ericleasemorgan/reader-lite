@@ -1,27 +1,31 @@
 #!/usr/bin/env python
 
-# reader.py - a Web interface to the index of Distant Reader sentence embeddings lite
+# reader-lite.py - a Web interface to the index of Distant Reader sentence embeddings lite
 
 # Eric Lease Morgan <emorgan@nd.edu>
 # (c) Infomotions, LLC; distributed under a GNU Public License
 
-# August 3, 2025 - first investigations; rooted in the non-lite version so I can share and demonstrate
-# August 9, 2025 - added more things than I can count, but as of now, all functions work
+# August  3, 2025 - first investigations; rooted in the non-lite version so I can share and demonstrate
+# August  9, 2025 - added more things than I can count, but as of now, all functions work
+# August 11, 2025 - modified so the whole thing is a package; I'm learning
 
 
 # configure
+EMBEDDER       = 'nomic-embed-text'
+LLM            = 'llama2'
+STATIC         = 'static'
+CARRELS        = 'carrels'
+DATABASE       = 'sentences.db'
+ETC            = 'etc'
 CACHEDCARREL   = 'cached-carrel.txt'
 CACHEDCITES    = 'cached-cites.txt'
 CACHEDQUERY    = 'cached-query.txt'
 CACHEDQUESTION = 'cached-question.txt'
 CACHEDRESULTS  = 'cached-results.txt'
-CARRELS        = 'carrels'
+CACHEDPERSONA  = 'cached-persona.txt'
 CATALOG        = 'catalog.csv'
-DATABASE       = 'sentences.db'
-EMBEDDER       = 'nomic-embed-text'
-ETC            = 'etc'
-LLM            = 'llama2'
 SYSTEMPROMPT   = 'system-prompt.txt'
+PERSONAS       = 'personas.txt'
 
 # require
 from flask                    import Flask, render_template, request
@@ -40,8 +44,9 @@ from typing                   import List
 import numpy                  as     np
 
 # initialize
-server = Flask(__name__)
+server = Flask( __name__ )
 cwd    = Path( dirname( __file__ ) )
+
 
 # home
 @server.route( "/" )
@@ -56,7 +61,7 @@ def question() :
 	SELECT = 'SELECT sentence FROM sentences WHERE sentence LIKE "%?" ORDER BY RANDOM() LIMIT 1'
 
 	# initialize
-	library  = cwd/ETC/CARRELS	
+	library  = cwd/STATIC/CARRELS	
 	carrel   = open( cwd/ETC/CACHEDCARREL ).read().split( '\t' )[ 0 ]
 	database = connect( library/carrel/DATABASE, check_same_thread=False )
 	database.enable_load_extension( True )
@@ -77,7 +82,7 @@ def search( carrel, query, depth ) :
 	SELECT   = "SELECT title, item, sentence, VEC_DISTANCE_L2(embedding, ?) AS distance FROM sentences ORDER BY distance LIMIT ?"
 
 	# initialize
-	library  = cwd/ETC/CARRELS		
+	library  = cwd/STATIC/CARRELS		
 	database = connect( library/carrel/DATABASE, check_same_thread=False )
 	database.enable_load_extension( True )
 	load( database )
@@ -129,16 +134,19 @@ def search( carrel, query, depth ) :
 	return( results )
 	
 
-
-# reviuew
+# review
 @server.route( "/review/" )
 def review() : 
 
+	# read and join previously found results
 	with open( cwd/ETC/CACHEDRESULTS ) as handle : results = handle.read().splitlines()
 	results = ' '.join( results )
 
-	return render_template('search.htm', results=results)
+	carrel = open( cwd/ETC/CACHEDCARREL ).read().split( '\t' )
+	query  = open( cwd/ETC/CACHEDQUERY ).read().split( '\t' )
 
+	# done
+	return render_template('search.htm', results=results, carrel=carrel, query=query[ 0 ], depth=query[ 1 ] )
 
 
 # search
@@ -161,7 +169,7 @@ def searchSimple() :
 	# return the search form
 	if not carrel or not query or not depth : return render_template('search-form.htm', catalog=catalog, carrel=previousCarrel, query=previousQuery, depth=previousDepth )
 		
-	# split the input into an array; kinda dumb
+	# split the returned carrel value into an array; kinda dumb
 	carrel = carrel.split( '--' )
 
 	# cache the carrel
@@ -171,7 +179,7 @@ def searchSimple() :
 	results = search( carrel[ 0 ], query, depth )
 	
 	# done
-	return render_template('search.htm', results=results)
+	return render_template( 'search.htm', carrel=carrel, query=query, results=results, depth=depth )
 
 
 # elaborate
@@ -185,16 +193,16 @@ def cites() :
 
 	# initialize
 	carrel = open( cwd/ETC/CACHEDCARREL ).read().split( '\t' )[ 0 ]
-	cache  = cwd/CARRELS/carrel/CACHE
-	prefix = str( cache )
+	cache  = '/'.join( [ STATIC, CARRELS, carrel, CACHE ] )
 	
+	# get and format the citations
 	cites = read_csv( cwd/ETC/CACHEDCITES, sep='\t', names=NAMES )
 	cites = cites.groupby( [ 'items' ], as_index=False )[ 'sentences' ].count()
 	cites = cites.sort_values( 'sentences', ascending=False )
 	cites = [ row.tolist() for index, row in cites.iterrows() ]	
-
+	
 	# done
-	return render_template('cites.htm', cites=cites, prefix=prefix, suffix=SUFFIX )
+	return render_template('cites.htm',  cache=cache, cites=cites, suffix=SUFFIX )
 
 
 # cites
@@ -204,20 +212,21 @@ def elaborate() :
 	# configure
 	PROMPT = 'Answer the question "%s" and use only the following as the source of the answer: %s'
 
+	# initialize
 	previousQuestion = open( cwd/ETC/CACHEDQUESTION ).read()
+	with open( cwd/ETC/CACHEDPERSONA ) as handle : persona = handle.read()
 
 	# get input
 	question = request.args.get( 'question', '' )
-	
 	if not question : return render_template('elaborate-form.htm', question=previousQuestion )
 
 	# cache the question
 	with open( cwd/ETC/CACHEDQUESTION, 'w' ) as handle : handle.write( question )
 
-	# initialize
+	# initialize some more
 	context = open( cwd/ETC/CACHEDRESULTS ).read()
 	system  = open( cwd/ETC/SYSTEMPROMPT ).read()
-	prompt  = ( PROMPT % ( question, context ))
+	prompt  = ( PROMPT % ( question, context ) )
 
 	# do the work
 	result = generate( LLM, prompt, system=system )
@@ -227,7 +236,7 @@ def elaborate() :
 	response = '<p>' + response + '</p>'
 
 	# done
-	return render_template('elaborate.htm', results=response )
+	return render_template('elaborate.htm', results=response, question=question, persona=persona )
 
 
 # summarize
@@ -235,12 +244,13 @@ def elaborate() :
 def summarize() :
 
 	# configure
-	PROMPT = 'Summarize the following: %s'
+	PROMPT = 'Summarize: %s'
 
 	# initialize
 	context = open( cwd/ETC/CACHEDRESULTS ).read()
 	system  = open( cwd/ETC/SYSTEMPROMPT ).read()
 	prompt  = ( PROMPT % ( context ) )
+	with open( cwd/ETC/CACHEDPERSONA ) as handle : persona = handle.read()
 
 	# try to get a responese
 	try: results = generate( LLM, prompt, system=system )
@@ -251,7 +261,7 @@ def summarize() :
 	results = '<p>' + response + '</p>'
 
 	# done
-	return render_template( 'summarize.htm', results=results )
+	return render_template( 'summarize.htm', results=results, persona=persona )
 
 
 # persona
@@ -259,28 +269,29 @@ def summarize() :
 def persona() :
 
 	# configure
-	PERSONAS = [ 'a child in the second grade', 'a child in the eigth grade', 'a high school valedictorian', 'a sophmoric college student', 'a helpful librarian', 'a university professor', 'an erudite scholar' ]
 	PREFIX   = 'You are '
 	SUFFIX   = '.'
 
+	# initialize
+	with open( cwd/ETC/PERSONAS ) as handle : personas = handle.read().splitlines()
+	selected = open( cwd/ETC/CACHEDPERSONA ).read()
+
 	# get input
 	persona = request.args.get( 'persona', '' )
-	if not persona : return render_template('persona-form.htm', personas=PERSONAS )
+	if not persona : return render_template( 'persona-form.htm', personas=personas, selected=selected )
 
 	# save
-	with open( cwd/ETC/SYSTEMPROMPT, 'w' )   as handle : handle.write( PREFIX + persona + SUFFIX )
+	with open( cwd/ETC/SYSTEMPROMPT, 'w' )  as handle : handle.write( PREFIX + persona + SUFFIX )
+	with open( cwd/ETC/CACHEDPERSONA, 'w' ) as handle : handle.write( persona )
 	return render_template('persona.htm', persona=persona )
 	
-
 
 # carrel
 @server.route("/choose/")
 def choose() :
 
-	# get the catalog as a list of lists
+	# get all the carrels as well as the most recently used carrel
 	catalog = getCatalog( cwd/ETC/CATALOG )
-	
-	# get the cached carrel
 	selected = open( cwd/ETC/CACHEDCARREL ).read().split( '\t' )[ 0 ]
 
 	# get input
@@ -291,13 +302,13 @@ def choose() :
 	carrel = carrel.split( '--' )
 			
 	# save
-	with open( cwd/ETC/CACHEDCARREL, 'w' )   as handle : handle.write( '\t'.join( carrel ) )
+	with open( cwd/ETC/CACHEDCARREL, 'w' ) as handle : handle.write( '\t'.join( carrel ) )
 	return render_template( 'carrel.htm', carrel=carrel )
 	
 
 # format
-@server.route("/format/")
-def format() :
+@server.route("/reformat/")
+def reformat() :
 
 	# configure
 	PSIZE = 16
@@ -334,15 +345,17 @@ def format() :
 	return render_template('format.htm', results=text )
 
 
-# format
+# next steps
 @server.route("/next/")
-def next() : 	return render_template('next.htm' )
+def next() : return render_template( 'next.htm' )
 
 
 # serializes a list of floats into a compact "raw bytes" format; makes things more efficient?
 def serialize( vector: List[float]) -> bytes : return pack( "%sf" % len( vector ), *vector )
 
+
 def rev_sigmoid( x:float )->float : return ( 1 / ( 1 + exp( 0.5*x ) ) )
+
 
 def activate_similarities( similarities:np.array, p_size=10 )->np.array :
         

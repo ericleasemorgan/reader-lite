@@ -1,8 +1,8 @@
-austen-emma_005-1815	15
-austen-emma_005-1815	17
-austen-emma_005-1815	20
-austen-emma_005-1815	48
-austen-emma_032-1815	200
-austen-emma_035-1815	63
-austen-emma_035-1815	73
-austen-emma_039-1815	28
+thoreau-walden_001_economy-1854	29
+thoreau-walden_001_economy-1854	692
+thoreau-walden_005_solitude-1854	108
+thoreau-walden_009_ponds-1854	129
+thoreau-walden_011_higher_laws-1854	83
+thoreau-walden_015_winter_animals-1854	58
+thoreau-walden_017_spring-1854	84
+thoreau-walden_017_spring-1854	169

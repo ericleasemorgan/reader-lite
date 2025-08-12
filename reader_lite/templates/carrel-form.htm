@@ -7,10 +7,9 @@
 	  	
 		<form method='GET' action='/choose/'>
 		<table>
-		<tr><th style='text-align: left'>Books</th><th>Selection</th></tr>
+		<tr><th style='text-align: left'>Selection</th><th>Books</th></tr>
 		{% for carrel in carrels %}
  			<tr>
- 				<td><a href='{{carrel[2]}}'>{{carrel[1]}}</a></td>
  				
  				{% if carrel[0] == selected %}
  					<td style='text-align:center'><input type="radio" name='carrel' value='{{carrel[0]}}--{{carrel[1]}}--{{carrel[2]}}' checked='checked' /></td>
@@ -18,9 +17,10 @@
  					<td style='text-align:center'><input type="radio" name='carrel' value='{{carrel[0]}}--{{carrel[1]}}--{{carrel[2]}}' /></td>
  				{% endif %}
 
+ 				<td><a href='{{carrel[2]}}'>{{carrel[1]}}</a></td>
  			</tr>
  		{% endfor %}
-		<tr><td></td><td><input type='submit' value='Choose' /></td></tr>
+		<tr><td><input type='submit' value='Choose' /></td><td></td></tr>
 		</table>
 	  </form>
 	  
