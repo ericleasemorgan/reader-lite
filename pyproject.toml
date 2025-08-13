@@ -1,7 +1,7 @@
 [project]
 name = "reader_lite"
 version = "1.0.0"
-description = "A Web-based application for interactively reading four specific books: 1) Emma by Jane Austen, 2) The Illiad and the Odyssey by Homer, 3) Moby Dick by Herman Melville, and 4) Walden Pond by Henry David Thorreau"
+description = "A Web-based application for interactively reading four specific books: 1) Emma by Jane Austen, 2) The Illiad and the Odyssey by Homer, 3) Moby Dick by Herman Melville, and 4) Walden Pond by Henry David Thoreau"
 dependencies = [
 	"flask",
 	"numpy",
@@ -15,9 +15,5 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["flit_core<4"]
+requires = ["flit_core"]
 build-backend = "flit_core.buildapi"
-
-#[build-system]
-#requires = [  "setuptools>=42", "wheel" ]
-#build-backend = "setuptools.build_meta"

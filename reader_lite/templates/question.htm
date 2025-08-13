@@ -1,20 +1,14 @@
 {% extends 'base.htm' %}
 
 {% block content %}
-	<h1>Get a question</h1>
+	<h1>Get and ask a question</h1>
 	
-	<p>Below is a randomly selected question from XXX:</p>
+	<p>Below is a randomly selected question from {{carrel[1]}}:</p>
 	<blockquote>
 	<p>{{question}}</p>
 	</blockquote>
 	
-	<p>Now:</p>
-	
-	<ol>
-		<li>search XXX using this question as the query</li>
-		<li>elaborate on the search results using this question as input</li>
-		<li><a href="/question/">get another question</a></li>
-	</ol>
-	
+	<p>Answers often include words from their questions. With this is mind, consider submitting a <a href="/search/?carrel={{carrel[0]}}--{{carrel[1]}}--&amp;query={{question}}&amp;depth=8">search</a> against {{carrel[1]}} using this question as input. Alternatively, <a href="/ask/?question={{question}}">search and elaborate</a> all in one go.</p>
+		
 {% endblock %}
 

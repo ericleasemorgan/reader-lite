@@ -11,21 +11,22 @@
 
 
 # configure
-EMBEDDER       = 'nomic-embed-text'
-LLM            = 'llama2'
-STATIC         = 'static'
-CARRELS        = 'carrels'
-DATABASE       = 'sentences.db'
-ETC            = 'etc'
-CACHEDCARREL   = 'cached-carrel.txt'
-CACHEDCITES    = 'cached-cites.txt'
-CACHEDQUERY    = 'cached-query.txt'
-CACHEDQUESTION = 'cached-question.txt'
-CACHEDRESULTS  = 'cached-results.txt'
-CACHEDPERSONA  = 'cached-persona.txt'
-CATALOG        = 'catalog.csv'
-SYSTEMPROMPT   = 'system-prompt.txt'
-PERSONAS       = 'personas.txt'
+EMBEDDER        = 'nomic-embed-text'
+LLM             = 'llama2'
+STATIC          = 'static'
+CARRELS         = 'carrels'
+DATABASE        = 'sentences.db'
+ETC             = 'etc'
+CACHEDCARREL    = 'cached-carrel.txt'
+CACHEDCITES     = 'cached-cites.txt'
+CACHEDQUERY     = 'cached-query.txt'
+CACHEDQUESTION  = 'cached-question.txt'
+CACHEDRESULTS   = 'cached-results.txt'
+CACHEDPERSONA   = 'cached-persona.txt'
+CATALOG         = 'catalog.csv'
+SYSTEMPROMPT    = 'system-prompt.txt'
+PERSONAS        = 'personas.txt'
+PROMPTELABORATE = 'Answer the question "%s" and use only the following as the source of the answer: %s'
 
 # require
 from flask                    import Flask, render_template, request
@@ -44,17 +45,47 @@ from typing                   import List
 import numpy                  as     np
 
 # initialize
-server = Flask( __name__ )
+reader = Flask( __name__ )
 cwd    = Path( dirname( __file__ ) )
 
 
 # home
-@server.route( "/" )
+@reader.route( "/" )
 def home() : return render_template('home.htm' )
 
 
+# ask; kinda messy
+@reader.route("/ask/")
+def ask() :
+
+	# configure
+	DEPTH = '8'
+	
+	# initialize; search
+	carrel   = open( cwd/ETC/CACHEDCARREL ).read().split( '\t' )
+	question = request.args.get( 'question', '' )
+	with open( cwd/ETC/CACHEDPERSONA ) as handle : persona = handle.read()
+	results  = search( carrel[ 0 ], question, DEPTH )
+	with open( cwd/ETC/CACHEDQUESTION, 'w' ) as handle : handle.write( question )
+
+	# initialize some more
+	context = open( cwd/ETC/CACHEDRESULTS ).read()
+	system  = open( cwd/ETC/SYSTEMPROMPT ).read()
+	prompt  = ( PROMPTELABORATE % ( question, context ) )
+
+	# do the work
+	result = generate( LLM, prompt, system=system )
+
+	# reformat the results
+	response = sub( '\n\n', '</p><p>', result[ 'response' ] ) 
+	response = '<p>' + response + '</p>'
+
+	# done
+	return render_template('elaborate.htm', results=response, question=question, persona=persona )
+
+	
 # question
-@server.route("/question/")
+@reader.route("/question/")
 def question() :
 
 	# configure
@@ -62,8 +93,8 @@ def question() :
 
 	# initialize
 	library  = cwd/STATIC/CARRELS	
-	carrel   = open( cwd/ETC/CACHEDCARREL ).read().split( '\t' )[ 0 ]
-	database = connect( library/carrel/DATABASE, check_same_thread=False )
+	carrel   = open( cwd/ETC/CACHEDCARREL ).read().split( '\t' )
+	database = connect( library/carrel[ 0 ]/DATABASE, check_same_thread=False )
 	database.enable_load_extension( True )
 	load( database )
 	
@@ -71,7 +102,7 @@ def question() :
 	question = database.execute( SELECT ).fetchone()[ 0 ]
 	
 	# done
-	return render_template( 'question.htm', question=question )
+	return render_template( 'question.htm', carrel=carrel, question=question )
 
 
 # the system's work horse
@@ -135,7 +166,7 @@ def search( carrel, query, depth ) :
 	
 
 # review
-@server.route( "/review/" )
+@reader.route( "/review/" )
 def review() : 
 
 	# read and join previously found results
@@ -150,7 +181,7 @@ def review() :
 
 
 # search
-@server.route( "/search/" )
+@reader.route( "/search/" )
 def searchSimple() :
 
 	# get the catalog as a list of lists
@@ -183,7 +214,7 @@ def searchSimple() :
 
 
 # elaborate
-@server.route( "/cites/" )
+@reader.route( "/cites/" )
 def cites() :
 
 	# configure
@@ -206,11 +237,8 @@ def cites() :
 
 
 # cites
-@server.route( "/elaborate/" )
+@reader.route( "/elaborate/" )
 def elaborate() :
-
-	# configure
-	PROMPT = 'Answer the question "%s" and use only the following as the source of the answer: %s'
 
 	# initialize
 	previousQuestion = open( cwd/ETC/CACHEDQUESTION ).read()
@@ -226,7 +254,7 @@ def elaborate() :
 	# initialize some more
 	context = open( cwd/ETC/CACHEDRESULTS ).read()
 	system  = open( cwd/ETC/SYSTEMPROMPT ).read()
-	prompt  = ( PROMPT % ( question, context ) )
+	prompt  = ( PROMPTELABORATE % ( question, context ) )
 
 	# do the work
 	result = generate( LLM, prompt, system=system )
@@ -240,7 +268,7 @@ def elaborate() :
 
 
 # summarize
-@server.route("/summarize/")
+@reader.route("/summarize/")
 def summarize() :
 
 	# configure
@@ -265,7 +293,7 @@ def summarize() :
 
 
 # persona
-@server.route("/persona/")
+@reader.route("/persona/")
 def persona() :
 
 	# configure
@@ -287,7 +315,7 @@ def persona() :
 	
 
 # carrel
-@server.route("/choose/")
+@reader.route("/choose/")
 def choose() :
 
 	# get all the carrels as well as the most recently used carrel
@@ -307,7 +335,7 @@ def choose() :
 	
 
 # format
-@server.route("/reformat/")
+@reader.route("/reformat/")
 def reformat() :
 
 	# configure
@@ -346,7 +374,7 @@ def reformat() :
 
 
 # next steps
-@server.route("/next/")
+@reader.route("/next/")
 def next() : return render_template( 'next.htm' )
 
 
