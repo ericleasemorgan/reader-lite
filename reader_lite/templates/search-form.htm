@@ -4,7 +4,7 @@
 	  <h1>Search</h1>
 	  
 	  <p>When it comes to the selected book, what do you want to know or read about?</p>
-	  
+
 	  <form method='GET' action='/search/'>
 	  <table>
 		  <tr><td style='text-align:right'>Book</td>
@@ -23,12 +23,13 @@
 		  <tr><td style='text-align:right'>Query</td><td><input name='query' value='{{query}}' size='64' /></td></tr>
 		  <tr><td style='text-align:right'>Number of sentences</td><td>
 		  <select name='depth'>
-		  <option value='1'>1</option>
-		  <option value='2'>2</option>
-		  <option value='4'>4</option>
-		  <option value='8'>8</option>
-		  <option value='16'>16</option>
-		  <option value='32'>32</option>
+            {% for i in [ '1', '2', '4', '8', '16', '32' ] %}
+              {% if i == depth %}
+                <option value='{{i}}' selected='selected'>{{i}}</option>
+              {% else %}
+                <option value='{{i}}'>{{i}}</option>
+              {% endif %}
+           {% endfor %}
 		  </select></td></tr>
 		  <tr><td></td><td><input type='submit' value='Search' /></td></tr>
 	  </table>
