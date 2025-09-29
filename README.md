@@ -3,7 +3,7 @@
 Reader Lite
 ===========
 
-The is a Flask-based Web application used to interactively read a set of four books:
+The is a Web-based application used to interactively read a set of four books:
 
   1. Emma by Jane Austen
   2. The Iliad and the Odyssey by Homer
