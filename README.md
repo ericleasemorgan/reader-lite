@@ -12,6 +12,13 @@ The is a Flask-based Web application used to interactively read a set of four bo
 
 Through the use of this tool the active reader (you) will enhance their use and understanding of the corpus. The whole thing kinda, sorta works like a back-of-the-book index but on steroids.
 
+
+Requirements
+------------
+
+Reader Lite ought to run on any computer with Python version 3.12 or greater installed. 
+
+
 Installation
 ------------
 
@@ -19,7 +26,7 @@ First, Reader Lite is a Python application. Open your terminal and run the follo
 
     python --version
 
-Second, Reader Lite requires the installation of [Ollama](https://ollama.com), a tool making it easy to run generative-AI applications on your computer. Visit https://ollama.com/download and install Ollama. It is not hard. I promise.
+Second, Reader Lite requires the installation of [Ollama](https://ollama.com), a tool making it easy to run generative-AI applications on your local computer. Visit https://ollama.com/download and install Ollama. It is not hard. I promise.
 
 Third, Reader Lite is configured to use two specific large language mnodels. Open your terminal and install LLama2:
 
@@ -43,7 +50,18 @@ Use pip to do the actual installation, and power-users may want to install the t
 
 If you got this far, then the hard parts are complete.
 
-Sixth, 
+Sixth, launch Reader Lite with the following command:
+
+    flask --app reader_lite run --debug
+
+Finally, open [http://127.0.0.1:5000](http://127.0.0.1:5000] in your Web browser, and you ought to see something very similar to the following:
+
+  [INSERT SCREEN SHOT HERE]
+
+Congratuations, you have successfully installed and launched Reader Lite. Whew!
+
+
+
 
 
 
