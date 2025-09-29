@@ -17,16 +17,33 @@ Installation
 
 First, Reader Lite is a Python application. Open your terminal and run the following command, and version number greater than or equal to 3.12 ought to work:
 
-  <code>python --version</code>
+    python --version
 
-Second, Reader Lite requires the installation of Ollama, a tool making it easy to run generative-AI applications on your computer. Visit https://ollama.com/download and install Ollama. It is not hard. I promise.
+Second, Reader Lite requires the installation of [Ollama](https://ollama.com), a tool making it easy to run generative-AI applications on your computer. Visit https://ollama.com/download and install Ollama. It is not hard. I promise.
 
-Third, Reader Lite is configured to use two specific large language mnodels. Open your terminal and run the following two commands:
+Third, Reader Lite is configured to use two specific large language mnodels. Open your terminal and install LLama2:
 
-   1. <code>ollama pull llama2:latest</code>
-   2. <code>ollama pull nomic-embed-text:latest</code>
+    ollama pull llama2:latest
 
-Fourth, as if this writing, Reader Lite can only be downloaded from GitHub. Open your terminal and run the following command which will download the Reader Lite software:
+Then install nomic-embed-text:
+
+    ollama pull nomic-embed-text:latest
+
+Fourth, as if this writing, Reader Lite can only be downloaded from GitHub. Open your terminal and run the following command which will download the Reader Lite software. Mind you, since the application includes a number of indexes, the download is not small, but it is not too big either:
+
+    git clone https://github.com/ericleasemorgan/reader-lite.git
+
+Fifth, install the software, and begin by changing directories to where the software was downloaded:
+
+    cd reader-lite
+
+Use pip to do the actual installation, and power-users may want to install the tool in a virtual environment:
+
+    pip install .
+
+If you got this far, then the hard parts are complete.
+
+Sixth, 
 
 
 
