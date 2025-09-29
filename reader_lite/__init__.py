@@ -5,15 +5,15 @@
 # Eric Lease Morgan <emorgan@nd.edu>
 # (c) Infomotions, LLC; distributed under a GNU Public License
 
-# August  3, 2025 - first investigations; rooted in the non-lite version so I can share and demonstrate
-# August  9, 2025 - added more things than I can count, but as of now, all functions work
-# August 11, 2025 - modified so the whole thing is a package; I'm learning
+# August     3, 2025 - first investigations; rooted in the non-lite version so I can share and demonstrate
+# August     9, 2025 - added more things than I can count, but as of now, all functions work
+# August    11, 2025 - modified so the whole thing is a package; I'm learning
+# September 29, 2025 - removed "Nex steps"; while "commencing" here in the Sainte-Geneviève Library, Paris
 
 
 # pre-configure
-#LLM = 'deepseek-v3.1:671b-cloud'
-#LLM  = 'gpt-oss:120b-cloud'
 LLM  = 'llama2'
+#LLM = 'deepseek-v3.1:671b-cloud'
 
 # configure
 EMBEDDER        = 'nomic-embed-text'
@@ -375,11 +375,6 @@ def reformat() :
 
 	# done
 	return render_template('format.htm', results=text )
-
-
-# next steps
-@reader.route("/next/")
-def next() : return render_template( 'next.htm' )
 
 
 # serializes a list of floats into a compact "raw bytes" format; makes things more efficient?
