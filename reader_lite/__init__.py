@@ -10,9 +10,13 @@
 # August 11, 2025 - modified so the whole thing is a package; I'm learning
 
 
+# pre-configure
+#LLM = 'deepseek-v3.1:671b-cloud'
+#LLM  = 'gpt-oss:120b-cloud'
+LLM  = 'llama2'
+
 # configure
 EMBEDDER        = 'nomic-embed-text'
-LLM             = 'llama2'
 STATIC          = 'static'
 CARRELS         = 'carrels'
 DATABASE        = 'sentences.db'
