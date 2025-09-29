@@ -56,11 +56,13 @@ Sixth, launch Reader Lite with the following command:
 
 Finally, open http://127.0.0.1:5000 in your Web browser, and you ought to see something very similar to the following:
 
+
 <img width="600" height="349" alt="screenshot" src="https://github.com/user-attachments/assets/66b5ab89-1718-4a09-b2e9-0b12574e0989" />
+
 
 Congratuations, you have successfully installed and launched Reader Lite. Whew!
 
-Next time, just run the following to pick up where you left off:
+Next time, just run the following command to pick up where you left off:
 
     flask --app reader_lite run --debug
 
