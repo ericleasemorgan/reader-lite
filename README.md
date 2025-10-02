@@ -16,48 +16,42 @@ Through the use of this tool the active reader (you) will enhance their use and 
 Requirements
 ------------
 
-Reader Lite ought to run on any computer with Python version 3.12 or greater installed. 
-
+- Python >= v3.12 
+    + Check with command `python --version`
+    + Outdated or `command not found`? Use your existing/favorite Python Version Manager or follow [this guide]().
+- Git 
+    + Check with command `git --version`
+    + `Command not found`? Follow [this guide]().
+- Ollama
+    + Check with command `ollama --version`
+    + `Command not found`? [Download it](https://ollama.com/), open the downloaded file and follow install steps. Then open the app. 
+    + **NOTE:** The Ollama app needs to be running in order to use it via command line!
+- 5GB of free space on your computer (for Ollama models)
 
 Installation
 ------------
-
-First, Reader Lite is a Python application. Open your terminal and run the following command, and version number greater than or equal to 3.12 ought to work:
-
-    python --version
-
-Second, Reader Lite requires the installation of [Ollama](https://ollama.com), a tool making it easy to run generative-AI applications on your local computer. Visit https://ollama.com/download and install Ollama. It is not hard. I promise.
-
-Third, Reader Lite is configured to use two specific large language mnodels. Open your terminal and install LLama2:
-
+0. Make sure you have the base requirements (see above).
+1. Clone the source code using Git and change directory into it
+    ```
+    git clone https://github.com/ericleasemorgan/reader-lite.git && cd reader-lite
+    ```
+2. Install Ollama LLM models needed by Reader Lite
+    ```
     ollama pull llama2:latest
-
-Then install nomic-embed-text:
-
     ollama pull nomic-embed-text:latest
-
-Fourth, as if this writing, Reader Lite can only be downloaded from GitHub. Open your terminal and run the following command which will download the Reader Lite software. Mind you, since the application includes a number of indexes, the download is not small, but it is not too big either:
-
-    git clone https://github.com/ericleasemorgan/reader-lite.git
-
-Fifth, install the software, and begin by changing directories to where the software was downloaded:
-
-    cd reader-lite
-
-Use pip to do the actual installation, and power-users may want to install the tool in a virtual environment:
-
+    ```
+3. Install necessary Python modules (including Flask, which will run the application)
+    ```
     pip install .
-
-If you got this far, then the hard parts are complete.
-
-Sixth, launch Reader Lite with the following command:
-
+    ```
+4. Run the application with Flask
+    ```
     flask --app reader_lite run --debug
+    ```
+    The app should now be running at open http://127.0.0.1:5000 in your web browser, and you ought to see something very similar to the following:
 
-Finally, open http://127.0.0.1:5000 in your Web browser, and you ought to see something very similar to the following:
 
-
-<img width="600" height="349" alt="screenshot" src="https://github.com/user-attachments/assets/66b5ab89-1718-4a09-b2e9-0b12574e0989" />
+    <img width="600" height="349" alt="screenshot" src="https://github.com/user-attachments/assets/66b5ab89-1718-4a09-b2e9-0b12574e0989" />
 
 
 Congratuations, you have successfully installed and launched Reader Lite. Whew.
